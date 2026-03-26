@@ -223,6 +223,158 @@ def handle_server_update(servers):
     return {"status": "ok", "message": "Server VPS aggiornati"}
 
 
+def handle_ospf_update(config):
+    """Aggiorna configurazione OSPF (bird2).
+
+    Genera /etc/bird.conf e riavvia bird2.
+    Bird2 su OpenWrt non usa UCI, ha il proprio file di configurazione.
+    """
+    if not config.get("enabled", False):
+        _service("stop", "bird")
+        return {"status": "ok", "message": "OSPF disabilitato"}
+
+    router_id = config.get("router_id", "")
+    areas = config.get("areas", [])
+    redistribute = config.get("redistribute", {})
+    import_filter = config.get("import_filter", "all")
+    export_filter = config.get("export_filter", "all")
+    ecmp = config.get("ecmp", True)
+    merge_external = config.get("merge_external", True)
+
+    # Genera bird.conf
+    lines = [
+        "# Generato automaticamente da OMR Platform",
+        "log syslog all;",
+        "",
+    ]
+
+    if router_id:
+        lines.append(f'router id {router_id};')
+    else:
+        lines.append("# router id auto")
+    lines.append("")
+
+    # Protocollo device
+    lines.append("protocol device {")
+    lines.append("  scan time 10;")
+    lines.append("}")
+    lines.append("")
+
+    # Protocollo direct (connected routes)
+    lines.append("protocol direct {")
+    lines.append("  ipv4;")
+    lines.append("  interface \"br-lan\", \"eth*\", \"wwan*\";")
+    lines.append("}")
+    lines.append("")
+
+    # Protocollo kernel
+    lines.append("protocol kernel {")
+    lines.append("  ipv4 {")
+    lines.append("    import all;")
+    lines.append(f"    export {export_filter};")
+    lines.append("  };")
+    lines.append("  learn;")
+    if ecmp:
+        lines.append("  merge paths on;")
+    lines.append("}")
+    lines.append("")
+
+    # Protocollo OSPF
+    lines.append("protocol ospf v2 omr_ospf {")
+    if ecmp:
+        lines.append("  ecmp yes;")
+    if merge_external:
+        lines.append("  merge external yes;")
+    lines.append(f"  tick {config.get('tick', 1)};")
+    lines.append("  ipv4 {")
+    lines.append(f"    import {import_filter};")
+    lines.append(f"    export {export_filter};")
+    lines.append("  };")
+    lines.append("")
+
+    for area in areas:
+        area_id = area.get("id", "0.0.0.0")
+        area_type = area.get("type", "normal")
+        lines.append(f"  area {area_id} {{")
+        if area_type == "stub":
+            lines.append("    stub;")
+        elif area_type == "nssa":
+            lines.append("    nssa;")
+
+        for intf in area.get("interfaces", []):
+            intf_name = intf.get("name", "")
+            if not intf_name:
+                continue
+            lines.append(f'    interface "{intf_name}" {{')
+            lines.append(f"      cost {intf.get('cost', 10)};")
+            lines.append(f"      hello {intf.get('hello', 10)};")
+            lines.append(f"      dead {intf.get('dead', 40)};")
+            intf_type = intf.get("type", "broadcast")
+            if intf_type == "pointopoint":
+                lines.append("      type pointopoint;")
+            elif intf_type == "nonbroadcast":
+                lines.append("      type nonbroadcast;")
+            if intf.get("passive", False):
+                lines.append("      stub;")
+            auth = intf.get("auth_type", "none")
+            if auth == "simple":
+                lines.append(f'      authentication simple;')
+                lines.append(f'      password "{intf.get("auth_key", "")}";')
+            elif auth == "md5":
+                lines.append(f'      authentication cryptographic;')
+                lines.append(f'      password "{intf.get("auth_key", "")}";')
+            lines.append("    };")
+
+        # Network statements
+        for net in area.get("networks", []):
+            if net:
+                lines.append(f"    networks {{ {net}; }};") if False else None
+        lines.append("  };")
+
+    lines.append("}")
+
+    bird_conf = "\n".join(lines)
+
+    if IS_PRODUCTION:
+        try:
+            with open("/etc/bird.conf", "w") as f:
+                f.write(bird_conf)
+            _service("restart", "bird")
+            return {"status": "ok", "message": "OSPF configurato e riavviato"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+    else:
+        print(f"[{DEVICE_ID}] [SIM] bird.conf generato ({len(lines)} righe)")
+        return {"status": "ok", "message": "OSPF configurato (simulato)", "config_preview": bird_conf}
+
+
+def ospf_show_neighbors():
+    """Recupera tabella neighbor OSPF da birdc."""
+    if IS_PRODUCTION:
+        try:
+            r = subprocess.run(["birdc", "show", "ospf", "neighbors"], capture_output=True, text=True, timeout=5)
+            neighbors = []
+            for line in r.stdout.strip().split("\n")[2:]:  # skip header
+                parts = line.split()
+                if len(parts) >= 5:
+                    neighbors.append({
+                        "router_id": parts[0],
+                        "state": parts[2].split("/")[0],
+                        "dead_timer": parts[3],
+                        "interface": parts[4],
+                        "ip": parts[1] if len(parts) > 1 else "",
+                    })
+            return {"status": "ok", "neighbors": neighbors}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+    else:
+        # Simula neighbor
+        return {"status": "ok", "neighbors": [
+            {"router_id": "10.0.0.2", "state": "Full", "interface": "br-lan", "ip": "192.168.100.2", "dead_timer": "32"},
+            {"router_id": "10.0.0.3", "state": "ExStart", "interface": "br-lan", "ip": "192.168.100.3", "dead_timer": "38"},
+        ], "simulated": True}
+
+
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
@@ -320,6 +472,17 @@ def on_message(client, userdata, msg):
 
         elif cmd_type == "update_vps":
             result["message"] = "Aggiornamento VPS remota avviato"
+
+        # --- OSPF ---
+        elif cmd_type == "update_ospf":
+            result = handle_ospf_update(cmd_payload)
+
+        elif cmd_type == "ospf_show_neighbors":
+            result = ospf_show_neighbors()
+
+        elif cmd_type == "ospf_restart":
+            _service("restart", "bird")
+            result["message"] = "Bird2 riavviato"
 
         else:
             result["message"] = f"Comando {cmd_type} ricevuto"

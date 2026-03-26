@@ -172,6 +172,47 @@ function RouterDashboard({ token, logout }) {
     { interface: 'wan3', enabled: false, tx_quota: 0, rx_quota: 0, tt_quota: 0, interval: 300 },
   ])
 
+  // === STATE: OSPF (bird2) ===
+  const [ospfConfig, setOspfConfig] = useState({
+    enabled: false,
+    router_id: '',  // auto se vuoto
+    // Aree
+    areas: [
+      {
+        id: '0.0.0.0',  // backbone
+        type: 'normal',  // normal, stub, nssa
+        interfaces: [
+          { name: 'br-lan', cost: 10, hello: 10, dead: 40, type: 'broadcast', passive: false, auth_type: 'none', auth_key: '' },
+        ],
+        networks: ['192.168.100.0/24'],
+      },
+    ],
+    // Redistribuzione
+    redistribute: {
+      connected: true,
+      static: false,
+      kernel: false,
+      bgp: false,
+    },
+    // Filtri
+    import_filter: 'all',
+    export_filter: 'all',
+    // Parametri globali
+    ecmp: true,
+    merge_external: true,
+    tick: 1,
+    // Neighbors (visualizzazione)
+    neighbors: [],
+    // Stato
+    status: {
+      running: false,
+      router_id: '',
+      areas: 0,
+      neighbors: 0,
+      routes: 0,
+    },
+  })
+
   // === STATE: LAN ===
   const [lanConfig, setLanConfig] = useState({
     proto: 'static', device: 'br-lan', ipaddr: '192.168.100.1', netmask: '255.255.255.0',
@@ -232,6 +273,7 @@ function RouterDashboard({ token, logout }) {
     { id: 'monitoring', label: 'Monitoraggio' },
     { id: 'quota', label: 'Quote' },
     { id: 'server', label: 'Server VPS' },
+    { id: 'ospf', label: 'OSPF' },
     { id: 'backup', label: 'Backup' },
   ]
 
@@ -668,6 +710,190 @@ function RouterDashboard({ token, logout }) {
         )}
 
         {/* BACKUP */}
+        {/* OSPF */}
+        {activeTab === 'ospf' && (
+          <Card>
+            <SectionHeader title="OSPF (Bird2)" editing={editMode.ospf} onEdit={() => setEditMode({...editMode, ospf: true})} onSave={() => saveSection('ospf', ospfConfig)} />
+
+            {/* Stato + Enable */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div style={{ background: '#172033', borderRadius: 8, padding: 16, border: '1px solid #334155' }}>
+                <p style={{ color: '#94a3b8', fontSize: 11, margin: 0 }}>Stato</p>
+                <p style={{ color: ospfConfig.enabled ? '#22c55e' : '#64748b', fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>
+                  {ospfConfig.enabled ? 'Attivo' : 'Disattivo'}
+                </p>
+              </div>
+              <div style={{ background: '#172033', borderRadius: 8, padding: 16, border: '1px solid #334155' }}>
+                <p style={{ color: '#94a3b8', fontSize: 11, margin: 0 }}>Router ID</p>
+                <p style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>{ospfConfig.router_id || 'Auto'}</p>
+              </div>
+              <div style={{ background: '#172033', borderRadius: 8, padding: 16, border: '1px solid #334155' }}>
+                <p style={{ color: '#94a3b8', fontSize: 11, margin: 0 }}>Aree</p>
+                <p style={{ color: '#3b82f6', fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>{ospfConfig.areas.length}</p>
+              </div>
+              <div style={{ background: '#172033', borderRadius: 8, padding: 16, border: '1px solid #334155' }}>
+                <p style={{ color: '#94a3b8', fontSize: 11, margin: 0 }}>Neighbor</p>
+                <p style={{ color: '#a855f7', fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>{ospfConfig.status.neighbors}</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {/* Generale */}
+              <SubCard title="Configurazione Generale">
+                <ToggleField label="OSPF Attivo" value={ospfConfig.enabled} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, enabled: v})} />
+                <Field label="Router ID" value={ospfConfig.router_id} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, router_id: v})} placeholder="Auto (IP piu alto)" />
+                <ToggleField label="ECMP" value={ospfConfig.ecmp} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, ecmp: v})} />
+                <ToggleField label="Merge External" value={ospfConfig.merge_external} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, merge_external: v})} />
+                <Field label="Tick (s)" value={ospfConfig.tick} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, tick: parseInt(v)||1})} type="number" />
+                <Field label="Import Filter" value={ospfConfig.import_filter} editing={editMode.ospf} type="select" options={[['all','Accetta Tutto'],['none','Rifiuta Tutto'],['custom','Personalizzato']]} onChange={v => setOspfConfig({...ospfConfig, import_filter: v})} />
+                <Field label="Export Filter" value={ospfConfig.export_filter} editing={editMode.ospf} type="select" options={[['all','Accetta Tutto'],['none','Rifiuta Tutto'],['connected','Solo Connesse'],['custom','Personalizzato']]} onChange={v => setOspfConfig({...ospfConfig, export_filter: v})} />
+              </SubCard>
+
+              {/* Redistribuzione */}
+              <SubCard title="Redistribuzione Rotte">
+                <ToggleField label="Connected" value={ospfConfig.redistribute.connected} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, redistribute: {...ospfConfig.redistribute, connected: v}})} />
+                <ToggleField label="Static" value={ospfConfig.redistribute.static} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, redistribute: {...ospfConfig.redistribute, static: v}})} />
+                <ToggleField label="Kernel" value={ospfConfig.redistribute.kernel} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, redistribute: {...ospfConfig.redistribute, kernel: v}})} />
+                <ToggleField label="BGP" value={ospfConfig.redistribute.bgp} editing={editMode.ospf} onChange={v => setOspfConfig({...ospfConfig, redistribute: {...ospfConfig.redistribute, bgp: v}})} />
+                <p style={{ color: '#64748b', fontSize: 11, marginTop: 12 }}>
+                  Le rotte redistribuite vengono annunciate come External Type 2 (E2) ai neighbor OSPF.
+                </p>
+              </SubCard>
+            </div>
+
+            {/* Aree OSPF */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h4 style={{ color: '#fff', margin: 0, fontSize: 14 }}>Aree OSPF</h4>
+                {editMode.ospf && (
+                  <button onClick={() => setOspfConfig({...ospfConfig, areas: [...ospfConfig.areas, {
+                    id: `0.0.0.${ospfConfig.areas.length}`, type: 'normal',
+                    interfaces: [], networks: [],
+                  }]})} style={btnStyle('#3b82f6', '#1e3a5f')}>+ Aggiungi Area</button>
+                )}
+              </div>
+
+              {ospfConfig.areas.map((area, ai) => (
+                <SubCard key={ai} title={`Area ${area.id}${area.id === '0.0.0.0' ? ' (Backbone)' : ''}`} style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <Field label="Area ID" value={area.id} editing={editMode.ospf} onChange={v => {
+                        const a = [...ospfConfig.areas]; a[ai] = {...a[ai], id: v}; setOspfConfig({...ospfConfig, areas: a})
+                      }} />
+                      <Field label="Tipo Area" value={area.type} editing={editMode.ospf} type="select" options={[['normal','Normal'],['stub','Stub'],['nssa','NSSA']]} onChange={v => {
+                        const a = [...ospfConfig.areas]; a[ai] = {...a[ai], type: v}; setOspfConfig({...ospfConfig, areas: a})
+                      }} />
+
+                      {/* Reti */}
+                      <h5 style={{ color: '#94a3b8', fontSize: 11, margin: '12px 0 6px', textTransform: 'uppercase' }}>Reti Annunciate</h5>
+                      {area.networks.map((net, ni) => (
+                        <div key={ni} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '4px 0' }}>
+                          {editMode.ospf ? (
+                            <>
+                              <input value={net} onChange={e => {
+                                const a = [...ospfConfig.areas]; a[ai].networks[ni] = e.target.value; setOspfConfig({...ospfConfig, areas: a})
+                              }} style={{ ...inputStyle, flex: 1 }} placeholder="192.168.1.0/24" />
+                              <button onClick={() => {
+                                const a = [...ospfConfig.areas]; a[ai].networks.splice(ni, 1); setOspfConfig({...ospfConfig, areas: a})
+                              }} style={btnStyle('#ef4444', '#3b1c1c', true)}>X</button>
+                            </>
+                          ) : (
+                            <span style={{ color: '#fff', fontSize: 12, fontFamily: 'monospace' }}>{net}</span>
+                          )}
+                        </div>
+                      ))}
+                      {editMode.ospf && (
+                        <button onClick={() => {
+                          const a = [...ospfConfig.areas]; a[ai].networks.push(''); setOspfConfig({...ospfConfig, areas: a})
+                        }} style={{ ...btnStyle('#3b82f6', '#1e3a5f', true), marginTop: 4 }}>+ Rete</button>
+                      )}
+                    </div>
+
+                    {/* Interfacce nell'area */}
+                    <div>
+                      <h5 style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 6px', textTransform: 'uppercase' }}>Interfacce</h5>
+                      {area.interfaces.map((intf, ii) => (
+                        <div key={ii} style={{ background: '#0f172a', borderRadius: 6, padding: 10, marginBottom: 8 }}>
+                          <Field label="Interfaccia" value={intf.name} editing={editMode.ospf} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, name: v}; setOspfConfig({...ospfConfig, areas: a})
+                          }} />
+                          <Field label="Costo" value={intf.cost} editing={editMode.ospf} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, cost: parseInt(v)||10}; setOspfConfig({...ospfConfig, areas: a})
+                          }} type="number" />
+                          <Field label="Hello (s)" value={intf.hello} editing={editMode.ospf} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, hello: parseInt(v)||10}; setOspfConfig({...ospfConfig, areas: a})
+                          }} type="number" />
+                          <Field label="Dead (s)" value={intf.dead} editing={editMode.ospf} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, dead: parseInt(v)||40}; setOspfConfig({...ospfConfig, areas: a})
+                          }} type="number" />
+                          <Field label="Tipo" value={intf.type} editing={editMode.ospf} type="select" options={[['broadcast','Broadcast'],['pointopoint','Point-to-Point'],['nonbroadcast','NBMA']]} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, type: v}; setOspfConfig({...ospfConfig, areas: a})
+                          }} />
+                          <ToggleField label="Passiva" value={intf.passive} editing={editMode.ospf} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, passive: v}; setOspfConfig({...ospfConfig, areas: a})
+                          }} />
+                          <Field label="Autenticazione" value={intf.auth_type} editing={editMode.ospf} type="select" options={[['none','Nessuna'],['simple','Simple'],['md5','MD5']]} onChange={v => {
+                            const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, auth_type: v}; setOspfConfig({...ospfConfig, areas: a})
+                          }} />
+                          {intf.auth_type !== 'none' && (
+                            <Field label="Chiave Auth" value={intf.auth_key} editing={editMode.ospf} onChange={v => {
+                              const a = [...ospfConfig.areas]; a[ai].interfaces[ii] = {...intf, auth_key: v}; setOspfConfig({...ospfConfig, areas: a})
+                            }} type="password" />
+                          )}
+                          {editMode.ospf && (
+                            <button onClick={() => {
+                              const a = [...ospfConfig.areas]; a[ai].interfaces.splice(ii, 1); setOspfConfig({...ospfConfig, areas: a})
+                            }} style={{ ...btnStyle('#ef4444', '#3b1c1c', true), marginTop: 4 }}>Rimuovi</button>
+                          )}
+                        </div>
+                      ))}
+                      {editMode.ospf && (
+                        <button onClick={() => {
+                          const a = [...ospfConfig.areas];
+                          a[ai].interfaces.push({ name: '', cost: 10, hello: 10, dead: 40, type: 'broadcast', passive: false, auth_type: 'none', auth_key: '' });
+                          setOspfConfig({...ospfConfig, areas: a})
+                        }} style={btnStyle('#3b82f6', '#1e3a5f', true)}>+ Interfaccia</button>
+                      )}
+                    </div>
+                  </div>
+
+                  {editMode.ospf && area.id !== '0.0.0.0' && (
+                    <button onClick={() => {
+                      const a = ospfConfig.areas.filter((_, idx) => idx !== ai);
+                      setOspfConfig({...ospfConfig, areas: a})
+                    }} style={{ ...btnStyle('#ef4444', '#3b1c1c', true), marginTop: 8 }}>Rimuovi Area</button>
+                  )}
+                </SubCard>
+              ))}
+            </div>
+
+            {/* Neighbor table (read-only) */}
+            <SubCard title="Neighbor OSPF" style={{ marginTop: 16 }}>
+              {ospfConfig.status.neighbors === 0 ? (
+                <p style={{ color: '#64748b', fontSize: 12 }}>Nessun neighbor OSPF rilevato. Abilita OSPF e configura le interfacce.</p>
+              ) : (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', padding: '6px 0', borderBottom: '1px solid #334155' }}>
+                    {['Router ID', 'Stato', 'Interfaccia', 'IP', 'Dead Timer'].map(h => (
+                      <span key={h} style={{ color: '#64748b', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</span>
+                    ))}
+                  </div>
+                  {ospfConfig.neighbors.map((n, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', padding: '6px 0', borderBottom: '1px solid #334155' }}>
+                      <span style={{ color: '#fff', fontSize: 12, fontFamily: 'monospace' }}>{n.router_id}</span>
+                      <span style={{ color: n.state === 'Full' ? '#22c55e' : '#f59e0b', fontSize: 12, fontWeight: 600 }}>{n.state}</span>
+                      <span style={{ color: '#94a3b8', fontSize: 12 }}>{n.interface}</span>
+                      <span style={{ color: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}>{n.ip}</span>
+                      <span style={{ color: '#94a3b8', fontSize: 12 }}>{n.dead_timer}s</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => sendCommand('ospf_show_neighbors')} style={{ ...btnStyle('#3b82f6', '#1e3a5f', true), marginTop: 8 }}>Aggiorna Neighbor</button>
+            </SubCard>
+          </Card>
+        )}
+
         {activeTab === 'backup' && (
           <Card>
             <h3 style={sectionTitle}>Backup e Ripristino</h3>
