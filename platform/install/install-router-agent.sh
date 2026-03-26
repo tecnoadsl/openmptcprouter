@@ -1,12 +1,12 @@
 #!/bin/sh
 # Script di installazione agent OMR Platform sul Router OpenWrt
-# Uso: curl -s https://cloud.tecnoadsl.net/install/router | sh -s -- <DEVICE_ID> <MQTT_PASSWORD>
+# Uso: curl -s https://aicore.tecnoadsl.net/install/router | sh -s -- <DEVICE_ID> <MQTT_PASSWORD>
 #
 # Prerequisiti: Router con OpenMPTCProuter già installato
 
 DEVICE_ID="${1:?Uso: $0 <DEVICE_ID> <MQTT_PASSWORD>}"
 MQTT_PASSWORD="${2:?Uso: $0 <DEVICE_ID> <MQTT_PASSWORD>}"
-MQTT_BROKER="${3:-cloud.tecnoadsl.net}"
+MQTT_BROKER="${3:-aicore.tecnoadsl.net}"
 MQTT_PORT="${4:-8883}"
 TENANT="${5:-tecnoadsl}"
 

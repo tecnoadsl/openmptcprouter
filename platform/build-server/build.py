@@ -56,7 +56,7 @@ def generate_agent_config(device_id, mqtt_password, mqtt_broker, tenant):
     return config
 
 
-def create_agent_package(device_id, mqtt_password, mqtt_broker="cloud.tecnoadsl.net", tenant="tecnoadsl"):
+def create_agent_package(device_id, mqtt_password, mqtt_broker="aicore.tecnoadsl.net", tenant="tecnoadsl"):
     """Crea un pacchetto OpenWrt con l'agent preconfigurato."""
     pkg_dir = OUTPUT_DIR / f"agent-{device_id}"
     pkg_dir.mkdir(exist_ok=True)
@@ -113,7 +113,7 @@ def create_agent_package(device_id, mqtt_password, mqtt_broker="cloud.tecnoadsl.
 
 
 def run_build(build_id, target, device_id=None, mqtt_password=None,
-              mqtt_broker="cloud.tecnoadsl.net", tenant="tecnoadsl",
+              mqtt_broker="aicore.tecnoadsl.net", tenant="tecnoadsl",
               include_ospf=True, include_agent=True):
     """Esegue la build del firmware in background."""
 
@@ -322,7 +322,7 @@ class BuildHandler(BaseHTTPRequestHandler):
                 kwargs={
                     "device_id": body.get("device_id"),
                     "mqtt_password": body.get("mqtt_password"),
-                    "mqtt_broker": body.get("mqtt_broker", "cloud.tecnoadsl.net"),
+                    "mqtt_broker": body.get("mqtt_broker", "aicore.tecnoadsl.net"),
                     "tenant": body.get("tenant", "tecnoadsl"),
                     "include_ospf": body.get("include_ospf", True),
                     "include_agent": body.get("include_agent", True),

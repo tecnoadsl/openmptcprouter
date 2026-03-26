@@ -766,7 +766,7 @@ function ProvisionForm({ sites, onProvision }) {
           <div style={{ background: '#0f172a', borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 13 }}>
             <p style={{ color: '#64748b', margin: '0 0 4px' }}># Installazione {form.device_type === 'router' ? 'Router' : 'VPS'}:</p>
             <p style={{ color: '#22c55e', margin: '0 0 12px', wordBreak: 'break-all' }}>
-              curl -s https://cloud.tecnoadsl.net/install/{form.device_type === 'router' ? 'router' : 'vps'} | {form.device_type === 'router' ? 'sh' : 'bash'} -s -- {result.device_id} {result.mqtt_password}
+              curl -s https://aicore.tecnoadsl.net/install/{form.device_type === 'router' ? 'router' : 'vps'} | {form.device_type === 'router' ? 'sh' : 'bash'} -s -- {result.device_id} {result.mqtt_password}
             </p>
             <p style={{ color: '#64748b', margin: '0 0 4px' }}># Parametri MQTT:</p>
             <p style={{ color: '#fff', margin: 0 }}>Broker: {result.mqtt_broker}</p>

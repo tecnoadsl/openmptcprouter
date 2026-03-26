@@ -112,7 +112,7 @@ async def create_device(
         "id": str(db_device.id),
         "device_id": db_device.device_id,
         "mqtt_password": mqtt_password,  # Mostrare solo alla creazione
-        "mqtt_broker": "cloud.tecnoadsl.net",
+        "mqtt_broker": "aicore.tecnoadsl.net",
         "mqtt_port": 8883,
         "mqtt_topic": f"omr/tecnoadsl/{db_device.device_id}",
     }
