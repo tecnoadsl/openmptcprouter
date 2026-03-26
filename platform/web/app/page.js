@@ -390,6 +390,7 @@ function CloudDashboard({ token, logout }) {
           <>
             <h2 style={pageTitle}>Provisioning Nuovo Dispositivo</h2>
             <ProvisionForm sites={sites} onProvision={provisionDevice} />
+            <FirmwareBuild style={{ marginTop: 16 }} />
           </>
         )}
       </main>
@@ -804,6 +805,109 @@ function CreateModal({ title, fields, onSave, onClose }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function FirmwareBuild() {
+  const BUILD_API = 'http://localhost:8085'
+  const [targets, setTargets] = useState({})
+  const [builds, setBuilds] = useState({})
+  const [form, setForm] = useState({
+    target: 'x86_64', device_id: '', mqtt_password: '',
+    include_ospf: true, include_agent: true,
+  })
+  const [building, setBuilding] = useState(false)
+
+  useEffect(() => {
+    fetch(`${BUILD_API}/targets`).then(r => r.json()).then(d => setTargets(d.targets || {})).catch(() => {
+      setTargets({
+        x86_64: 'x86/64 (PC, Mini PC, VM)',
+        rpi4: 'Raspberry Pi 4', rpi5: 'Raspberry Pi 5',
+        r5s: 'NanoPi R5S', r4s: 'NanoPi R4S', r2s: 'NanoPi R2S',
+        'bpi-r4': 'Banana Pi BPI-R4',
+        wrt3200acm: 'Linksys WRT3200ACM', rutx50: 'Teltonika RUTX50',
+      })
+    })
+    // Poll builds
+    const interval = setInterval(() => {
+      fetch(`${BUILD_API}/builds`).then(r => r.json()).then(d => setBuilds(d.builds || {})).catch(() => {})
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const startBuild = async () => {
+    setBuilding(true)
+    try {
+      const res = await fetch(`${BUILD_API}/build`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (data.build_id) {
+        setBuilds(prev => ({ ...prev, [data.build_id]: { id: data.build_id, status: 'queued', target: form.target } }))
+      }
+    } catch (e) {}
+    setBuilding(false)
+  }
+
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <h3 style={sectionTitle}>Build Firmware Personalizzato</h3>
+      <p style={{ color: '#64748b', fontSize: 12, margin: '4px 0 16px' }}>
+        Compila un firmware OpenMPTCProuter con agent preinstallato e OSPF.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Target Hardware</label>
+          <select value={form.target} onChange={e => setForm({...form, target: e.target.value})} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}>
+            {Object.entries(targets).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Device ID (opzionale, per agent preconfigurato)</label>
+          <input value={form.device_id} onChange={e => setForm({...form, device_id: e.target.value})} placeholder="router-sede-01" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={labelStyle}>Password MQTT (opzionale)</label>
+          <input value={form.mqtt_password} onChange={e => setForm({...form, mqtt_password: e.target.value})} placeholder="Generata dal provisioning" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.include_ospf} onChange={e => setForm({...form, include_ospf: e.target.checked})} /> OSPF (bird2)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.include_agent} onChange={e => setForm({...form, include_agent: e.target.checked})} /> Agent preinstallato
+          </label>
+        </div>
+      </div>
+
+      <button onClick={startBuild} disabled={building} style={{ ...btnStyle('#fff', '#3b82f6'), padding: '10px 24px', fontSize: 14, opacity: building ? 0.5 : 1 }}>
+        {building ? 'Avvio build...' : 'Avvia Build Firmware'}
+      </button>
+
+      {/* Lista build */}
+      {Object.keys(builds).length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h4 style={{ color: '#fff', fontSize: 14, margin: '0 0 8px' }}>Build in corso / completate</h4>
+          {Object.values(builds).reverse().map(b => (
+            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #334155' }}>
+              <span style={{
+                padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                background: b.status === 'completed' ? '#16362d' : b.status === 'failed' ? '#3b1c1c' : '#3b2f1c',
+                color: b.status === 'completed' ? '#22c55e' : b.status === 'failed' ? '#ef4444' : '#f59e0b',
+              }}>{b.status}</span>
+              <span style={{ color: '#fff', fontSize: 12 }}>{b.id}</span>
+              <span style={{ color: '#94a3b8', fontSize: 12 }}>{targets[b.target] || b.target}</span>
+              <span style={{ color: '#64748b', fontSize: 11, flex: 1 }}>{b.step || ''}</span>
+              {b.status === 'completed' && b.firmware && (
+                <a href={`${BUILD_API}/download/${b.firmware}`} style={{ ...btnStyle('#22c55e', '#16362d', true), textDecoration: 'none' }}>Download</a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   )
 }
 
