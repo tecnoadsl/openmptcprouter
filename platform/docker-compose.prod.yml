@@ -1,0 +1,80 @@
+services:
+  # --- MQTT Broker ---
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: omr-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt-data:/mosquitto/data
+      - mqtt-log:/mosquitto/log
+    restart: unless-stopped
+
+  # --- PostgreSQL ---
+  db:
+    image: postgres:16-alpine
+    container_name: omr-db
+    environment:
+      POSTGRES_DB: omr_platform
+      POSTGRES_USER: omr
+      POSTGRES_PASSWORD: omr_dev_password
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: omr-redis
+    restart: unless-stopped
+
+  # --- Cloud API ---
+  api:
+    build: ./api
+    container_name: omr-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://omr:omr_dev_password@db:5432/omr_platform
+      MQTT_BROKER: mqtt
+      MQTT_PORT: 1883
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: dev-secret-change-in-production
+    depends_on:
+      - db
+      - mqtt
+      - redis
+    restart: unless-stopped
+
+  # --- Dashboard Cloud ---
+  web:
+    build: ./web
+    container_name: omr-web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # --- Build Server (firmware x86_64) ---
+  build-server:
+    build: ./build-server
+    container_name: omr-build
+    ports:
+      - "8085:8085"
+    volumes:
+      - build-cache:/home/builder/openmptcprouter
+      - build-output:/home/builder/builds
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  mqtt-data:
+  mqtt-log:
+  build-cache:
+  build-output:
