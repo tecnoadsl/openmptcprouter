@@ -1,0 +1,529 @@
+omr-vps-admin (0.16+20260113) unstable; urgency=medium
+
+    * Fix ivloop issue with unicorn
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 13 Janc 2026 15:38:14 +0200
+
+omr-vps-admin (0.16+20251202) unstable; urgency=medium
+
+    * Add XRay protocol settings (gRPC, TCP, xHTTP)
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 12 Dec 2025 09:19:21 +0200
+
+omr-vps-admin (0.16+20251126) unstable; urgency=medium
+
+    * Fix IPv6 (https://github.com/Ysurac/openmptcprouter/issues/4155)
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 26 Nov 2025 16:19:12 +0200
+
+omr-vps-admin (0.16+20250918) unstable; urgency=medium
+
+    * Fix invalid escape sequence
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 18 Sep 2025 09:37:26 +0200
+
+omr-vps-admin (0.16+20250909) unstable; urgency=medium
+
+    * Fix CRL permission
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 09 Sep 2025 15:20:14 +0200
+
+omr-vps-admin (0.16+20250829) unstable; urgency=medium
+
+    * Increase CRL expiration date
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 29 Aug 2025 14:28:55 +0200
+
+omr-vps-admin (0.16+20250812) unstable; urgency=medium
+
+    * Fix on SoftEther data usage
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 12 Aug 2025 08:18:34 +0200
+
+omr-vps-admin (0.16+20250806) unstable; urgency=medium
+
+    * Add initial SoftEther VPN suppport
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 08 Aug 2025 10:56:21 +0200
+
+omr-vps-admin (0.15+20250721) unstable; urgency=medium
+
+    * Fix a typo
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 21 Jul 2025 14:25:14 +0200
+
+omr-vps-admin (0.15+20250717) unstable; urgency=medium
+
+    * Don't restart OpenVPN when user removed
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 17 Jul 2025 16:30:28 +0200
+
+omr-vps-admin (0.15+20250519) unstable; urgency=medium
+
+    * Add XRay multi IPs support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 19 May 2025 17:18:30 +0200
+
+omr-vps-admin (0.14+20250410) unstable; urgency=medium
+
+    * Fix IPv6 detection
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 10 Apr 2025 19:30:23 +0200
+
+omr-vps-admin (0.14+20250319) unstable; urgency=medium
+
+    * Fix VPN IPs in Shorewall params.vpn
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 19 Mar 2025 09:35:48 +0200
+
+omr-vps-admin (0.14+20250318) unstable; urgency=medium
+
+    * Fix V2Ray/XRay API ports
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 18 Mar 2025 09:53:21 +0200
+
+omr-vps-admin (0.14+20250220) unstable; urgency=medium
+
+    * Fix XRay multi users
+    * Better log
+    * Various small fixes
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 20 Feb 2025 15:39:12 +0200
+
+omr-vps-admin (0.14+20241216) unstable; urgency=medium
+
+    * Fix typos
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 16 Dec 2024 15:41:21 +0200
+
+omr-vps-admin (0.14+20241125) unstable; urgency=medium
+
+    * Block removal of userid 0
+    * Add XRay users via API
+    * Fix Shorewall IPv6 delete rules
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 25 Nov 2024 10:09:35 +0200
+
+omr-vps-admin (0.14+20241025) unstable; urgency=medium
+
+    * Fix remove user
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 25 Oct 2024 11:50:30 +0200
+
+omr-vps-admin (0.13+20241025) unstable; urgency=medium
+
+    * Fix Shadowsocks-go new API support on add/remove user
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 25 Oct 2024 10:09:14 +0200
+
+omr-vps-admin (0.13+20241016) unstable; urgency=medium
+
+    * Add Shadowsocks-go new API support
+    * Add option to disable 6in4
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 16 Oct 2024 15:49:13 +0200
+
+omr-vps-admin (0.12+20240920) unstable; urgency=medium
+
+    * Fix Shadowsocks-go changes
+    * Fix Shadowsocks-libev changes
+    * Fix MPTCP support check
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 20 Sep 2024 08:09:20 +0200
+
+omr-vps-admin (0.12+20240827) unstable; urgency=medium
+
+    * Add support for "none" encryption with Shadowsocks-go
+    * Check if there is really a modification before modifying config file
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 27 Aug 2024 15:14:37 +0200
+
+omr-vps-admin (0.12+20240819) unstable; urgency=medium
+
+    * Add LAN IPs info in status return
+    * Remove PKI req when user removed
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 19 Aug 2024 17:27:12 +0200
+
+omr-vps-admin (0.12+20240802) unstable; urgency=medium
+
+    * Keep IPv6 network and addr in config
+    * Keep same secret key for token due to multiple workers in config
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 02 Aug 2024 15:25:34 +0200
+
+omr-vps-admin (0.12+20240801) unstable; urgency=medium
+
+    * Fix when Shadowsocks-libev is not installed
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 01 Aug 2024 08:50:17 +0200
+
+omr-vps-admin (0.12+20240725) unstable; urgency=medium
+
+    * Add server workers
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 25 Jul 2024 08:26:12 +0200
+
+omr-vps-admin (0.11+20240723) unstable; urgency=medium
+
+    * Remove netjson dependency and endpoint using it
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 23 Jul 2024 15:01:25 +0200
+
+omr-vps-admin (0.11+20240705) unstable; urgency=medium
+
+    * psutil.cpu_freq only available in psutil >5.1.0 put request in a try/except block
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 05 Jul 2024 17:44:31 +0200
+
+omr-vps-admin (0.11+20240704) unstable; urgency=medium
+
+    * Use subprocess for ss -M command
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 04 Jul 2024 11:40:03 +0200
+
+omr-vps-admin (0.11+20240629) unstable; urgency=medium
+
+    * Add a timeout on ss -M command
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sat, 29 Jun 2024 06:55:12 +0200
+
+omr-vps-admin (0.11+20240625) unstable; urgency=medium
+
+    * Add memory, hard disk and CPU usage in status endpoint
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 25 Jun 2024 15:12:44 +0200
+
+omr-vps-admin (0.10+20240531) unstable; urgency=medium
+
+    * Add option to disable GRE tunnels
+    * Add more Debug logs
+    * Don't set VPN IPs if not really needed
+    * Disable set_lastchange function not used and not working
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 31 May 2024 13:17:23 +0200
+
+omr-vps-admin (0.9+20240528) unstable; urgency=medium
+
+    * Add SOF-67: Returning total number of users by Dillon Ward
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 28 May 2024 14:50:19 +0200
+
+omr-vps-admin (0.9+20240516) unstable; urgency=medium
+
+    * Fix Shadowsocks-Go user creation
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 16 May 2024 16:43:12 +0200
+
+omr-vps-admin (0.9+20240426) unstable; urgency=medium
+
+    * Fix V2Ray/XRay json data retrieve
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 24 Apr 2024 15:03:41 +0200
+
+omr-vps-admin (0.9+20240324) unstable; urgency=medium
+
+    * Fix Shadowsocks Rust stats error
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 24 Mar 2024 21:35:13 +0200
+
+omr-vps-admin (0.9+20240322) unstable; urgency=medium
+
+    * Fix OpenVPN stats
+    * Fix Shadowsocks Rust stats
+    * You can add notes in json to an existing user
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 22 Mar 2024 16:00:25 +0200
+
+omr-vps-admin (0.9+20240301) unstable; urgency=medium
+
+    * Add/Remove users via API without script restart
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 01 Mar 2024 15:32:17 +0200
+
+omr-vps-admin (0.9+20240222) unstable; urgency=medium
+
+    * Use fd00 instead of fe80 for 6in4
+    * Allow all users to set VPN IPs in config
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 22 Feb 2024 18:17:04 +0200
+
+omr-vps-admin (0.8+20240213) unstable; urgency=medium
+
+    * Fix Shadowsocks-go add user and XRay/V2Ray remove user
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 13 Feb 2024 15:02:13 +0200
+
+omr-vps-admin (0.8+20240210) unstable; urgency=medium
+
+    * Fix typo
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sat, 10 Feb 2024 15:12:20 +0200
+
+omr-vps-admin (0.8+20240208) unstable; urgency=medium
+
+    * Add localvpn in API status answer, for future use"
+    * Fix OpenVPN config status
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 08 Feb 2024 10:30:14 +0200
+
+omr-vps-admin (0.8+20231228) unstable; urgency=medium
+
+    * Add function to get bypassed IPs from router
+    * Force 2022-blake3-aes-256-gcm for Shadowsocks-go
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 28 Dec 2023 19:48:29 +0200
+
+omr-vps-admin (0.7+20231215) unstable; urgency=medium
+
+    * Require authentication for upload and download test
+    * Crypt method can be modified for XRay Shadowsocks
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 15 Dec 2023 19:33:51 +0200
+
+omr-vps-admin (0.7+20231206) unstable; urgency=medium
+
+    * Fix adding OpenVPN user
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 03 Dec 2023 09:58:24 +0200
+
+omr-vps-admin (0.7+20231128) unstable; urgency=medium
+
+    * Fix global settings in json
+    * Fix when hostname website doesn't answer
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 28 Nov 2023 11:35:32 +0200
+
+omr-vps-admin (0.7+20231116) unstable; urgency=medium
+
+    * Fix ss_go stats when ss_go return a json with an error message
+    * Add OpenVPN stats by users support
+    * Add V2Ray VMess add users via API
+    * XRay Vless-Reality fix
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 16 Nov 2023 11:49:41 +0200
+
+omr-vps-admin (0.6+20231105) unstable; urgency=medium
+
+    * Really fix ss_go stats issue by returning a json instead of 0
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 05 Nov 2023 07:34:25 +0200
+
+omr-vps-admin (0.6+20231104) unstable; urgency=medium
+
+    * Should fix ss_go stats issue
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sat, 04 Nov 2023 20:22:34 +0200
+
+omr-vps-admin (0.6+20231102) unstable; urgency=medium
+
+    * Fix OpenVPN support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 02 Nov 2023 11:29:47 +0200
+
+omr-vps-admin (0.5+20231021) unstable; urgency=medium
+
+    * Remove pip from postinst
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 21 Oct 2023 23:53:14 +0200
+
+omr-vps-admin (0.5+20231017) unstable; urgency=medium
+
+    * Add XRay VLESS REALITY support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 17 Oct 2023 15:03:35 +0200
+
+omr-vps-admin (0.4+20231013) unstable; urgency=medium
+
+    * Fix error when API try to remove a Shadowsocks port that doesn't exist
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 13 Oct 2023 11:43:24 +0200
+
+omr-vps-admin (0.4+20231009) unstable; urgency=medium
+
+    * Add Shadowsocks-go traffic support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 09 Oct 2023 16:45:37 +0200
+
+omr-vps-admin (0.4+20231004) unstable; urgency=medium
+
+    * Fix Proxy configuration setting
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 04 Oct 2023 15:32:25 +0200
+
+omr-vps-admin (0.4+20230929) unstable; urgency=medium
+
+    * Fix XRay  traffic stats
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 29 Sep 2023 14:23:59 +0200
+
+omr-vps-admin (0.4+20230927) unstable; urgency=medium
+
+    * Add XRay support
+    * Add Shadowsocks-go support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 27 Sep 2023 15:08:39 +0200
+
+omr-vps-admin (0.3+20230911) unstable; urgency=medium
+
+    * Fix V2Ray traffic stats
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 11 Sep 2023 10:52:57 +0200
+
+omr-vps-admin (0.3+20230910) unstable; urgency=medium
+
+    * Remove dig requirement
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 10 Sep 2023 09:25:34 +0200
+
+omr-vps-admin (0.3+20230901) unstable; urgency=medium
+
+    * 10 router backups on VPS support, rotated
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 01 Sep 2023 09:12:36 +0200
+
+omr-vps-admin (0.3+20230828) unstable; urgency=medium
+
+    * Fix V2Ray stats
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 28 Aug 2023 10:15:54 +0200
+
+omr-vps-admin (0.3+20230825) unstable; urgency=medium
+
+    * Add V2Ray VMESS, SOCKS  and TROJAN protocols support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 25 Aug 2023 15:27:23 +0200
+
+omr-vps-admin (0.3+20230823) unstable; urgency=medium
+
+    * Fix in upload speedtest
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Wed, 23 Aug 2023 19:55:20 +0200
+
+omr-vps-admin (0.3+20230807) unstable; urgency=medium
+
+    * Replace regex by pattern
+    * Add upload speedtest
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 07 Aug 2023 19:17:52 +0200
+
+omr-vps-admin (0.3+20230724) unstable; urgency=medium
+
+    * Fix port redirection string to int
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 24 Jul 2023 09:24:34 +0200
+
+omr-vps-admin (0.3+20230718) unstable; urgency=medium
+
+    * Fix FastAPI version
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 17 Jul 2023 19:08:52 +0200
+
+omr-vps-admin (0.3+20230709) unstable; urgency=medium
+
+    * Remove IPv6 VPN IP check
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 09 Jul 2023 20:13:12 +0200
+
+omr-vps-admin (0.3+20230217) unstable; urgency=medium
+
+    * Fix Shadowsocks config on multiple IP
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 17 Feb 2023 16:36:22 +0200
+
+omr-vps-admin (0.3+20221001) unstable; urgency=medium
+
+    * Fix IPv6 firewall
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sat, 01 Oct 2022 07:26:42 +0200
+
+omr-vps-admin (0.3+20220827) unstable; urgency=medium
+
+    * Fix SIP ALG
+    * Add Wireguard client conf
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 27 Aug 2022 00:01:00 +0200
+
+omr-vps-admin (0.3+20220715) unstable; urgency=medium
+
+    * Fix line ending for MPTCP settings
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 15 Jui 2022 04:32:00 +0200
+
+omr-vps-admin (0.3+20220714) unstable; urgency=medium
+
+    * MPTCP version support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 14 Jui 2022 21:32:03 +0200
+
+omr-vps-admin (0.3+20220711) unstable; urgency=medium
+
+    * Add support to modify v2ray rules
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Mon, 11 Jui 2022 20:03:12 +0200
+
+omr-vps-admin (0.3+20220708) unstable; urgency=medium
+
+    * Fix v2ray remove rules
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Fri, 08 Jui 2022 20:09:47 +0200
+
+omr-vps-admin (0.3+20220612) unstable; urgency=medium
+
+    * Fix multiples FW rules
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sun, 12 Jun 2022 19:44:21 +0200
+
+omr-vps-admin (0.3+20220517) unstable; urgency=medium
+
+    * Add SIP ALG support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 17 May 2022 20:50:43 +0200
+
+omr-vps-admin (0.3+20210508) unstable; urgency=medium
+
+    * Fix update VPS
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Sat, 08 May 2021 08:40:13 +0200
+
+omr-vps-admin (0.3+20210414) unstable; urgency=medium
+
+    * Add check MPTCP support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 14 Apr 2021 21:10:30 +0200
+
+omr-vps-admin (0.3+20210408) unstable; urgency=medium
+
+    * Fix timing attack potential vulnerability
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 08 Apr 2021 20:57:20 +0200
+
+omr-vps-admin (0.3+20210325) unstable; urgency=medium
+
+    * Add MLVPN function to modify config
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 25 Mar 2021 09:27:20 +0200
+
+omr-vps-admin (0.3+20210315) unstable; urgency=medium
+
+    * Add MLVPN function to modify config
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 15 Mar 2021 15:10:52 +0200
+
+omr-vps-admin (0.3+20210304) unstable; urgency=medium
+
+    * Wireguard for MPTCP over VPN support
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 04 Mar 2021 14:36:12 +0200
+
+omr-vps-admin (0.2+20200611) unstable; urgency=medium
+
+    * Fix on VPN IPs settings
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Thu, 11 Jun 2020 20:27:08 +0200
+
+omr-vps-admin (0.1+20200608.git.e1e3bfa) unstable; urgency=medium
+
+    * initial package
+
+ -- OpenMPTCProuter <contact@openmptcprouter.com>  Tue, 8 Jun 2020 14:36:01 +0200

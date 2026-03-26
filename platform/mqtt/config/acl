@@ -1,0 +1,10 @@
+# Cloud API - accesso totale
+user cloud_api
+topic readwrite omr/#
+
+# Device generico - può scrivere solo sui propri topic
+pattern readwrite omr/+/%u/#
+
+# Dashboard WebSocket - solo lettura
+user dashboard
+topic read omr/#
