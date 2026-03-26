@@ -223,6 +223,70 @@ def handle_server_update(servers):
     return {"status": "ok", "message": "Server VPS aggiornati"}
 
 
+def handle_bypass_update(config):
+    """Aggiorna configurazione bypass e failover via UCI (omr-bypass)."""
+    results = []
+
+    # Failover
+    mode = config.get("failover_mode", "fallback_wan")
+    if mode == "kill_switch":
+        _uci(["set", "openmptcprouter.settings.disabledefaultgw=1"])
+    else:
+        _uci(["set", "openmptcprouter.settings.disabledefaultgw=0"])
+
+    if mode == "fallback_specific":
+        wan = config.get("failover_wan", "wan1")
+        _uci(["set", f"openmptcprouter.settings.fallback_wan={wan}"])
+
+    # Tracker
+    tracker = config.get("tracker", {})
+    if "check_interval" in tracker:
+        _uci(["set", f"omr-tracker.defaults.interval={tracker['check_interval']}"])
+    if "check_timeout" in tracker:
+        _uci(["set", f"omr-tracker.defaults.timeout={tracker['check_timeout']}"])
+    if "check_hosts" in tracker:
+        hosts = tracker["check_hosts"].replace(",", " ")
+        _uci(["set", f"omr-tracker.defaults.hosts={hosts}"])
+    if "max_failures" in tracker:
+        _uci(["set", f"omr-tracker.defaults.failure={tracker['max_failures']}"])
+
+    # Regole bypass per destinazione
+    # Prima rimuovi le vecchie regole
+    if IS_PRODUCTION:
+        subprocess.run(["uci", "delete", "omr-bypass"], capture_output=True, timeout=5)
+
+    for i, rule in enumerate(config.get("rules", [])):
+        if not rule.get("enabled", False):
+            continue
+        section = f"rule{i}"
+        _uci(["set", f"omr-bypass.{section}=bypass"])
+        _uci(["set", f"omr-bypass.{section}.name={rule.get('name', '')}"])
+        _uci(["set", f"omr-bypass.{section}.type={rule.get('type', 'domain')}"])
+        _uci(["set", f"omr-bypass.{section}.dest={rule.get('value', '')}"])
+        _uci(["set", f"omr-bypass.{section}.interface={rule.get('wan', 'wan1')}"])
+        if rule.get("protocol"):
+            _uci(["set", f"omr-bypass.{section}.proto={rule['protocol']}"])
+
+    # Regole bypass per sorgente LAN
+    for i, rule in enumerate(config.get("lan_rules", [])):
+        if not rule.get("enabled", False):
+            continue
+        section = f"lan_rule{i}"
+        _uci(["set", f"omr-bypass.{section}=bypass"])
+        _uci(["set", f"omr-bypass.{section}.name={rule.get('name', '')}"])
+        _uci(["set", f"omr-bypass.{section}.src={rule.get('value', '')}"])
+        _uci(["set", f"omr-bypass.{section}.src_type={rule.get('type', 'ip')}"])
+        _uci(["set", f"omr-bypass.{section}.interface={rule.get('wan', 'wan1')}"])
+
+    _uci(["commit", "omr-bypass"])
+    _uci(["commit", "omr-tracker"])
+    _uci(["commit", "openmptcprouter"])
+    _service("restart", "omr-bypass")
+    _service("restart", "omr-tracker")
+
+    return {"status": "ok", "message": "Bypass e failover aggiornati"}
+
+
 def handle_ospf_update(config):
     """Aggiorna configurazione OSPF (bird2).
 
@@ -472,6 +536,10 @@ def on_message(client, userdata, msg):
 
         elif cmd_type == "update_vps":
             result["message"] = "Aggiornamento VPS remota avviato"
+
+        # --- Bypass / Failover ---
+        elif cmd_type == "update_bypass":
+            result = handle_bypass_update(cmd_payload)
 
         # --- OSPF ---
         elif cmd_type == "update_ospf":

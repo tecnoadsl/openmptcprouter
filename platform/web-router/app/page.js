@@ -172,6 +172,34 @@ function RouterDashboard({ token, logout }) {
     { interface: 'wan3', enabled: false, tx_quota: 0, rx_quota: 0, tt_quota: 0, interval: 300 },
   ])
 
+  // === STATE: Bypass / Failover ===
+  const [bypassConfig, setBypassConfig] = useState({
+    // Failover
+    failover_mode: 'fallback_wan',  // kill_switch, fallback_wan, fallback_specific
+    failover_wan: 'wan1',
+    disable_default_gw: false,
+    // Regole bypass
+    rules: [
+      { id: 1, enabled: true, name: 'Streaming', type: 'domain', value: 'netflix.com,youtube.com,primevideo.com,disneyplus.com', wan: 'wan1', note: 'Uscita diretta fibra' },
+      { id: 2, enabled: true, name: 'Gaming', type: 'port', value: '3074,3478-3480,27015-27030', protocol: 'udp', wan: 'wan1', note: 'Bassa latenza' },
+      { id: 3, enabled: false, name: 'VoIP SIP', type: 'port', value: '5060,5061,10000-20000', protocol: 'udp', wan: 'wan1', note: 'Telefonia' },
+      { id: 4, enabled: false, name: 'Banca', type: 'domain', value: 'bancaintesa.it,unicredit.it', wan: 'wan1', note: 'IP fisso' },
+    ],
+    // Bypass per sorgente LAN
+    lan_rules: [
+      { id: 1, enabled: false, name: 'TV Smart', type: 'ip', value: '192.168.100.50', wan: 'wan1', note: 'TV bypass tunnel' },
+      { id: 2, enabled: false, name: 'NVR', type: 'ip', value: '192.168.100.60', wan: 'wan2', note: 'Telecamere su 4G backup' },
+    ],
+    // Tracker (monitoraggio tunnel)
+    tracker: {
+      enabled: true,
+      check_interval: 10,
+      check_timeout: 5,
+      check_hosts: '1.1.1.1,8.8.8.8',
+      max_failures: 3,
+    },
+  })
+
   // === STATE: OSPF (bird2) ===
   const [ospfConfig, setOspfConfig] = useState({
     enabled: false,
@@ -273,6 +301,7 @@ function RouterDashboard({ token, logout }) {
     { id: 'monitoring', label: 'Monitoraggio' },
     { id: 'quota', label: 'Quote' },
     { id: 'server', label: 'Server VPS' },
+    { id: 'bypass', label: 'Bypass / Failover' },
     { id: 'ospf', label: 'OSPF' },
     { id: 'backup', label: 'Backup' },
   ]
@@ -711,6 +740,236 @@ function RouterDashboard({ token, logout }) {
 
         {/* BACKUP */}
         {/* OSPF */}
+        {/* BYPASS / FAILOVER */}
+        {activeTab === 'bypass' && (
+          <Card>
+            <SectionHeader title="Bypass e Failover" editing={editMode.bypass} onEdit={() => setEditMode({...editMode, bypass: true})} onSave={() => saveSection('bypass', bypassConfig)} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              {/* Failover */}
+              <SubCard title="Failover (quando il tunnel VPN cade)">
+                <Field label="Modalita Failover" value={bypassConfig.failover_mode} editing={editMode.bypass} type="select" options={[
+                  ['kill_switch', 'Kill Switch (blocca tutto)'],
+                  ['fallback_wan', 'Fallback su WAN diretta'],
+                  ['fallback_specific', 'Fallback su WAN specifica'],
+                ]} onChange={v => setBypassConfig({...bypassConfig, failover_mode: v})} />
+
+                {bypassConfig.failover_mode === 'fallback_specific' && (
+                  <Field label="WAN Failover" value={bypassConfig.failover_wan} editing={editMode.bypass} type="select"
+                    options={wanConfig.map(w => [w.name, w.label || w.name])}
+                    onChange={v => setBypassConfig({...bypassConfig, failover_wan: v})} />
+                )}
+
+                <ToggleField label="Disabilita Gateway Default" value={bypassConfig.disable_default_gw} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, disable_default_gw: v})} />
+
+                <p style={{ color: '#64748b', fontSize: 11, marginTop: 8 }}>
+                  {bypassConfig.failover_mode === 'kill_switch' && 'Nessun traffico uscira se il tunnel VPN cade. Massima sicurezza.'}
+                  {bypassConfig.failover_mode === 'fallback_wan' && 'Il traffico uscira direttamente dalla WAN senza tunnel. IP pubblico cambiera.'}
+                  {bypassConfig.failover_mode === 'fallback_specific' && 'Solo la WAN selezionata verra usata come fallback.'}
+                </p>
+              </SubCard>
+
+              {/* Tracker */}
+              <SubCard title="Tunnel Tracker (monitoraggio)">
+                <ToggleField label="Tracker Attivo" value={bypassConfig.tracker.enabled} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, tracker: {...bypassConfig.tracker, enabled: v}})} />
+                <Field label="Intervallo Check (s)" value={bypassConfig.tracker.check_interval} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, tracker: {...bypassConfig.tracker, check_interval: parseInt(v)||10}})} type="number" />
+                <Field label="Timeout (s)" value={bypassConfig.tracker.check_timeout} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, tracker: {...bypassConfig.tracker, check_timeout: parseInt(v)||5}})} type="number" />
+                <Field label="Host di Test" value={bypassConfig.tracker.check_hosts} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, tracker: {...bypassConfig.tracker, check_hosts: v}})} placeholder="1.1.1.1,8.8.8.8" />
+                <Field label="Max Fallimenti" value={bypassConfig.tracker.max_failures} editing={editMode.bypass}
+                  onChange={v => setBypassConfig({...bypassConfig, tracker: {...bypassConfig.tracker, max_failures: parseInt(v)||3}})} type="number" />
+              </SubCard>
+            </div>
+
+            {/* Regole bypass per destinazione */}
+            <SubCard title="Regole Bypass (traffico che esce senza tunnel)">
+              <p style={{ color: '#64748b', fontSize: 11, margin: '0 0 12px' }}>
+                Il traffico che corrisponde a queste regole uscira direttamente dalla WAN selezionata, senza passare dal tunnel VPN.
+              </p>
+
+              {/* Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '40px 120px 90px 1fr 80px 1fr 40px', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                {['', 'Nome', 'Tipo', 'Valore', 'WAN', 'Note', ''].map(h => (
+                  <span key={h} style={{ color: '#64748b', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</span>
+                ))}
+              </div>
+
+              {bypassConfig.rules.map((rule, ri) => (
+                <div key={rule.id} style={{ display: 'grid', gridTemplateColumns: '40px 120px 90px 1fr 80px 1fr 40px', padding: '8px 0', borderBottom: '1px solid #334155', alignItems: 'center' }}>
+                  {editMode.bypass ? (
+                    <ToggleSmallBypass value={rule.enabled} onChange={() => {
+                      const r = [...bypassConfig.rules]; r[ri] = {...r[ri], enabled: !r[ri].enabled}; setBypassConfig({...bypassConfig, rules: r})
+                    }} />
+                  ) : (
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: rule.enabled ? '#22c55e' : '#64748b' }} />
+                  )}
+
+                  {editMode.bypass ? (
+                    <input value={rule.name} onChange={e => {
+                      const r = [...bypassConfig.rules]; r[ri] = {...r[ri], name: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                    }} style={{ ...inputStyle, width: '100%' }} />
+                  ) : (
+                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{rule.name}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <select value={rule.type} onChange={e => {
+                      const r = [...bypassConfig.rules]; r[ri] = {...r[ri], type: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                    }} style={selectStyle}>
+                      <option value="domain">Dominio</option>
+                      <option value="ip">IP/Rete</option>
+                      <option value="port">Porta</option>
+                      <option value="protocol">Protocollo</option>
+                      <option value="mac">MAC</option>
+                    </select>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 11 }}>{rule.type}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <div>
+                      <input value={rule.value} onChange={e => {
+                        const r = [...bypassConfig.rules]; r[ri] = {...r[ri], value: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                      }} style={{ ...inputStyle, width: '100%' }} placeholder={rule.type === 'domain' ? 'example.com,altro.it' : rule.type === 'ip' ? '1.2.3.4/32' : '80,443'} />
+                      {rule.type === 'port' && (
+                        <select value={rule.protocol || 'both'} onChange={e => {
+                          const r = [...bypassConfig.rules]; r[ri] = {...r[ri], protocol: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                        }} style={{ ...selectStyle, marginTop: 4, width: '100%' }}>
+                          <option value="both">TCP+UDP</option>
+                          <option value="tcp">Solo TCP</option>
+                          <option value="udp">Solo UDP</option>
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all' }}>{rule.value}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <select value={rule.wan} onChange={e => {
+                      const r = [...bypassConfig.rules]; r[ri] = {...r[ri], wan: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                    }} style={selectStyle}>
+                      {wanConfig.map(w => <option key={w.name} value={w.name}>{w.label || w.name}</option>)}
+                    </select>
+                  ) : (
+                    <span style={{ color: '#3b82f6', fontSize: 11 }}>{wanConfig.find(w => w.name === rule.wan)?.label || rule.wan}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <input value={rule.note || ''} onChange={e => {
+                      const r = [...bypassConfig.rules]; r[ri] = {...r[ri], note: e.target.value}; setBypassConfig({...bypassConfig, rules: r})
+                    }} style={{ ...inputStyle, width: '100%' }} placeholder="Note" />
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: 11 }}>{rule.note}</span>
+                  )}
+
+                  {editMode.bypass && (
+                    <button onClick={() => {
+                      setBypassConfig({...bypassConfig, rules: bypassConfig.rules.filter((_, idx) => idx !== ri)})
+                    }} style={btnStyle('#ef4444', '#3b1c1c', true)}>X</button>
+                  )}
+                </div>
+              ))}
+
+              {editMode.bypass && (
+                <button onClick={() => {
+                  const newId = Math.max(0, ...bypassConfig.rules.map(r => r.id)) + 1
+                  setBypassConfig({...bypassConfig, rules: [...bypassConfig.rules, { id: newId, enabled: true, name: '', type: 'domain', value: '', wan: 'wan1', note: '', protocol: 'both' }]})
+                }} style={{ ...btnStyle('#3b82f6', '#1e3a5f'), marginTop: 8 }}>+ Aggiungi Regola Bypass</button>
+              )}
+            </SubCard>
+
+            {/* Regole bypass per sorgente LAN */}
+            <SubCard title="Bypass per Dispositivo LAN" style={{ marginTop: 16 }}>
+              <p style={{ color: '#64748b', fontSize: 11, margin: '0 0 12px' }}>
+                Tutto il traffico di questi dispositivi LAN uscira dalla WAN selezionata senza tunnel.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '40px 120px 80px 1fr 80px 1fr 40px', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                {['', 'Nome', 'Tipo', 'Valore', 'WAN', 'Note', ''].map(h => (
+                  <span key={h} style={{ color: '#64748b', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</span>
+                ))}
+              </div>
+
+              {bypassConfig.lan_rules.map((rule, ri) => (
+                <div key={rule.id} style={{ display: 'grid', gridTemplateColumns: '40px 120px 80px 1fr 80px 1fr 40px', padding: '8px 0', borderBottom: '1px solid #334155', alignItems: 'center' }}>
+                  {editMode.bypass ? (
+                    <ToggleSmallBypass value={rule.enabled} onChange={() => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], enabled: !r[ri].enabled}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} />
+                  ) : (
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: rule.enabled ? '#22c55e' : '#64748b' }} />
+                  )}
+
+                  {editMode.bypass ? (
+                    <input value={rule.name} onChange={e => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], name: e.target.value}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} style={{ ...inputStyle, width: '100%' }} />
+                  ) : (
+                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{rule.name}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <select value={rule.type} onChange={e => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], type: e.target.value}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} style={selectStyle}>
+                      <option value="ip">IP</option>
+                      <option value="mac">MAC</option>
+                      <option value="range">Range IP</option>
+                    </select>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 11 }}>{rule.type}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <input value={rule.value} onChange={e => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], value: e.target.value}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} style={{ ...inputStyle, width: '100%' }} placeholder={rule.type === 'ip' ? '192.168.100.50' : rule.type === 'mac' ? 'AA:BB:CC:DD:EE:FF' : '192.168.100.50-60'} />
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }}>{rule.value}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <select value={rule.wan} onChange={e => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], wan: e.target.value}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} style={selectStyle}>
+                      {wanConfig.map(w => <option key={w.name} value={w.name}>{w.label || w.name}</option>)}
+                    </select>
+                  ) : (
+                    <span style={{ color: '#3b82f6', fontSize: 11 }}>{wanConfig.find(w => w.name === rule.wan)?.label || rule.wan}</span>
+                  )}
+
+                  {editMode.bypass ? (
+                    <input value={rule.note || ''} onChange={e => {
+                      const r = [...bypassConfig.lan_rules]; r[ri] = {...r[ri], note: e.target.value}; setBypassConfig({...bypassConfig, lan_rules: r})
+                    }} style={{ ...inputStyle, width: '100%' }} />
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: 11 }}>{rule.note}</span>
+                  )}
+
+                  {editMode.bypass && (
+                    <button onClick={() => {
+                      setBypassConfig({...bypassConfig, lan_rules: bypassConfig.lan_rules.filter((_, idx) => idx !== ri)})
+                    }} style={btnStyle('#ef4444', '#3b1c1c', true)}>X</button>
+                  )}
+                </div>
+              ))}
+
+              {editMode.bypass && (
+                <button onClick={() => {
+                  const newId = Math.max(0, ...bypassConfig.lan_rules.map(r => r.id)) + 1
+                  setBypassConfig({...bypassConfig, lan_rules: [...bypassConfig.lan_rules, { id: newId, enabled: true, name: '', type: 'ip', value: '', wan: 'wan1', note: '' }]})
+                }} style={{ ...btnStyle('#3b82f6', '#1e3a5f'), marginTop: 8 }}>+ Aggiungi Dispositivo</button>
+              )}
+            </SubCard>
+          </Card>
+        )}
+
+        {/* OSPF */}
         {activeTab === 'ospf' && (
           <Card>
             <SectionHeader title="OSPF (Bird2)" editing={editMode.ospf} onEdit={() => setEditMode({...editMode, ospf: true})} onSave={() => saveSection('ospf', ospfConfig)} />
@@ -1040,6 +1299,14 @@ const btnStyle = (color, bg, small) => ({ padding: small ? '4px 8px' : '6px 14px
 const pill = { padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }
 const inputStyle = { background: '#0f172a', border: '1px solid #475569', borderRadius: 6, color: '#fff', padding: '6px 10px', fontSize: 13, outline: 'none' }
 const selectStyle = { background: '#0f172a', border: '1px solid #475569', borderRadius: 6, color: '#fff', padding: '6px 8px', fontSize: 13, outline: 'none' }
+
+function ToggleSmallBypass({ value, onChange }) {
+  return (
+    <div onClick={onChange} style={{ width: 32, height: 18, borderRadius: 9, cursor: 'pointer', background: value ? '#22c55e' : '#475569', position: 'relative', flexShrink: 0 }}>
+      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: value ? 16 : 2, transition: 'left 0.2s' }} />
+    </div>
+  )
+}
 const labelStyle = { color: '#94a3b8', fontSize: 12 }
 const sectionTitle = { color: '#fff', margin: 0, fontSize: 16 }
 const subTitle = { color: '#94a3b8', margin: '16px 0 8px', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }
